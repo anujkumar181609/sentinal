@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, AlertTriangle, RefreshCw, Cpu, BrainCircuit, BarChart3 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useWorldStore } from '@/store/useWorldStore';
+
+// How long to wait after the score finishes calculating before auto-advancing
+const AUTO_ADVANCE_DELAY_MS = 3000;
 
 const FINAL_SCORE = 0.94;
 const MODEL_RESULTS = [
@@ -38,6 +42,9 @@ function useRollingNumber(target: number, active: boolean, duration: number = 90
 export function Scene6_Stage3Scoring() {
   const [phase, setPhase] = useState<'idle' | 'calculating' | 'done'>('done');
   const [runCount, setRunCount] = useState(0);
+  const nextScene = useWorldStore((state) => state.nextScene);
+  const hasAutoRunRef = useRef(false);
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isCalc = phase === 'calculating';
   const isDone = phase === 'done';
@@ -51,6 +58,7 @@ export function Scene6_Stage3Scoring() {
 
   const recalculate = () => {
     if (phase === 'calculating') return;
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
     audio.playAlert();
     setPhase('calculating');
     setTimeout(() => {
@@ -59,6 +67,25 @@ export function Scene6_Stage3Scoring() {
       audio.playSuccess?.();
     }, 2200);
   };
+
+  // Run the risk calculation automatically as soon as this scene (page 6) is entered.
+  useEffect(() => {
+    if (hasAutoRunRef.current) return;
+    hasAutoRunRef.current = true;
+    recalculate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once the calculation finishes ('done'), auto-advance to the next scene after a short delay.
+  useEffect(() => {
+    if (phase !== 'done') return;
+    advanceTimeoutRef.current = setTimeout(() => {
+      nextScene();
+    }, AUTO_ADVANCE_DELAY_MS);
+    return () => {
+      if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    };
+  }, [phase, runCount, nextScene]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 pointer-events-auto">
