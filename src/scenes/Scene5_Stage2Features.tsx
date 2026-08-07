@@ -22,7 +22,7 @@ export function Scene5_Stage2Features() {
             <span>Stage 02 — Feature Engineering</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-medium font-serif text-white tracking-tight">
-            450+ Real-Time Behavioral Features
+            24+ Real-Time Behavioral Features
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
             Sentinel computes dynamic temporal aggregation, velocity surges, structuring indicators, and graph topology features simultaneously.
